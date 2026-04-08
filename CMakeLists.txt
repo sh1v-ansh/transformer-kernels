@@ -5,6 +5,9 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+include(CheckCXXCompilerFlag)
+check_cxx_compiler_flag("-mavx2" COMPILER_SUPPORTS_AVX2)
+
 find_package(pybind11 REQUIRED)
 
 add_library(tkernels STATIC
@@ -13,8 +16,22 @@ add_library(tkernels STATIC
     src/rope.cpp
 )
 target_include_directories(tkernels PUBLIC include)
-target_compile_options(tkernels PRIVATE -O2)
+target_compile_options(tkernels PRIVATE -O3 -ffast-math)
+
+if(COMPILER_SUPPORTS_AVX2)
+    target_compile_options(tkernels PRIVATE -mavx2 -mfma)
+    target_compile_definitions(tkernels PUBLIC HAVE_AVX2)
+    message(STATUS "AVX2 enabled")
+endif()
 
 pybind11_add_module(transformer_kernels_ext src/bindings.cpp)
 target_link_libraries(transformer_kernels_ext PRIVATE tkernels)
 target_include_directories(transformer_kernels_ext PRIVATE include)
+target_compile_options(transformer_kernels_ext PRIVATE -O3 -ffast-math)
+if(COMPILER_SUPPORTS_AVX2)
+    target_compile_options(transformer_kernels_ext PRIVATE -mavx2 -mfma)
+endif()
+set_target_properties(transformer_kernels_ext PROPERTIES
+    OUTPUT_NAME "transformer_kernels_ext"
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/python/transformer_kernels"
+)
