@@ -28,10 +28,13 @@ bool cpu_has_avx512f() {
 #endif
 }
 
+// Two-pass numerically-stable softmax: subtract max before exp.
 void softmax_scalar(float* x, size_t n) {
-    float mv = *std::max_element(x, x + n), sum = 0.0f;
-    for (size_t i=0;i<n;++i){ x[i]=std::exp(x[i]-mv); sum+=x[i]; }
-    float inv=1.f/sum; for(size_t i=0;i<n;++i) x[i]*=inv;
+    float mv = *std::max_element(x, x + n);
+    float sum = 0.0f;
+    for (size_t i = 0; i < n; ++i) { x[i] = std::exp(x[i] - mv); sum += x[i]; }
+    const float inv = 1.0f / sum;
+    for (size_t i = 0; i < n; ++i) x[i] *= inv;
 }
 
 #ifdef HAVE_AVX2
