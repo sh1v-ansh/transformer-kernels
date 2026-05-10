@@ -109,3 +109,24 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+# ── oneDNN baseline via Intel Extension for PyTorch (optional) ───────────────
+def _try_onednn_softmax(n: int):
+    try:
+        import intel_extension_for_pytorch  # noqa: F401
+        import torch
+        xt = torch.randn(n)
+        with torch.no_grad():
+            return _timeit(lambda: torch.softmax(xt, 0))
+    except ImportError:
+        return None
+
+
+def _append_onednn(rows: list[dict]):
+    for r in rows:
+        if r["op"] != "softmax":
+            continue
+        t = _try_onednn_softmax(r["n"])
+        if t is not None:
+            r["onednn_us"] = t
