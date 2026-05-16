@@ -1,0 +1,17 @@
+Roofline analysis – May 16 2026
+Hardware : Intel Core i7-12700K, DDR5-4800 (dual-channel)
+Measured peak BW  : 47.2 GB/s (STREAM-like memcpy probe, 256 MB buffer)
+Assumed peak FP32 : 56.0 GFLOP/s (1 core, AVX2 FMA @ 3.5 GHz estimate)
+Ridge point       : 1.19 FLOP/byte
+
+Kernel     AI (FLOP/B)   Achieved BW (GB/s)   BW util
+softmax        1.150          41.1 GB/s         87.1%
+rmsnorm        0.333          39.8 GB/s         84.3%
+rope           0.375          40.6 GB/s         86.0%
+
+All three kernels are firmly memory-bound (AI < ridge point 1.19 FLOP/B).
+Peak memory bandwidth utilisation: 87% at n=4096 / seq=512.
+
+Note: fast-exp polynomial approximation (utils.h) raises softmax AI
+from 1.0 to 1.15 vs scalar exp; keeps kernel in memory-bound regime
+while halving exp evaluation cost vs libm std::exp.
